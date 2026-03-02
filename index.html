@@ -1142,11 +1142,25 @@
         ];
 
         // --- STATE MANAGEMENT ---
+
+
+        let pieceIdCounter = Date.now();
+        function nextPieceId() {
+            pieceIdCounter += 1;
+            return pieceIdCounter;
+        }
+
+        function sanitizePieceValue(value) {
+            if (value === '' || value === null || value === undefined) return '';
+            const num = Number.parseFloat(value);
+            if (!Number.isFinite(num)) return '';
+            return Math.max(0, num);
+        }
         let state = {
             direction: 'export',
             type: 'doc',
             country: '',
-            pieces: [{ id: Date.now(), weight: '', length: '', width: '', height: '' }],
+            pieces: [{ id: nextPieceId(), weight: '', length: '', width: '', height: '' }],
             discountPercent: '',
             extraChargesInput: '',
             selectedSurcharges: { demandSurcharge: { active: true, qty: 1 } },
@@ -2067,16 +2081,16 @@
                                     <label class="text-[10px] text-gray-400 font-bold uppercase mb-1 block">Вес ${state.weightUnit.toUpperCase()}</label>
                                     <div class="relative">
                                         <!-- ОБНОВЛЕНО: Четкая рамка (border-gray-300) и реакция на наведение (hover:border-gray-400) -->
-                                        <input type="number" placeholder="0" value="${piece.weight}" oninput="updatePiece(${piece.id}, 'weight', this.value)" class="w-full px-3 py-2 bg-gray-50 border-2 border-gray-300 hover:border-gray-400 rounded-lg font-black text-gray-800 focus:outline-none focus:bg-white focus:border-[#F59E0B] transition-all text-lg shadow-sm">
+                                        <input type="number" placeholder="0" value="${piece.weight}" oninput="updatePiece(${piece.id}, 'weight', this.value)" min="0" step="any" class="w-full px-3 py-2 bg-gray-50 border-2 border-gray-300 hover:border-gray-400 rounded-lg font-black text-gray-800 focus:outline-none focus:bg-white focus:border-[#F59E0B] transition-all text-lg shadow-sm">
                                     </div>
                                 </div>
                                 <div>
                                     <label class="text-[10px] text-gray-400 font-bold uppercase mb-1 block">Габариты ${state.dimUnit.toUpperCase()}</label>
                                     <div class="grid grid-cols-3 gap-1">
                                         <!-- ОБНОВЛЕНО: Четкие рамки для полей Д, Ш, В -->
-                                        <input type="number" placeholder="Д" value="${piece.length}" oninput="updatePiece(${piece.id}, 'length', this.value)" class="w-full px-1 py-2 bg-gray-50 border-2 border-gray-300 hover:border-gray-400 rounded-lg font-bold text-gray-800 text-center text-sm focus:outline-none focus:bg-white focus:border-[#F59E0B] transition-all shadow-sm">
-                                        <input type="number" placeholder="Ш" value="${piece.width}" oninput="updatePiece(${piece.id}, 'width', this.value)" class="w-full px-1 py-2 bg-gray-50 border-2 border-gray-300 hover:border-gray-400 rounded-lg font-bold text-gray-800 text-center text-sm focus:outline-none focus:bg-white focus:border-[#F59E0B] transition-all shadow-sm">
-                                        <input type="number" placeholder="В" value="${piece.height}" oninput="updatePiece(${piece.id}, 'height', this.value)" class="w-full px-1 py-2 bg-gray-50 border-2 border-gray-300 hover:border-gray-400 rounded-lg font-bold text-gray-800 text-center text-sm focus:outline-none focus:bg-white focus:border-[#F59E0B] transition-all shadow-sm">
+                                        <input type="number" placeholder="Д" value="${piece.length}" oninput="updatePiece(${piece.id}, 'length', this.value)" min="0" step="any" class="w-full px-1 py-2 bg-gray-50 border-2 border-gray-300 hover:border-gray-400 rounded-lg font-bold text-gray-800 text-center text-sm focus:outline-none focus:bg-white focus:border-[#F59E0B] transition-all shadow-sm">
+                                        <input type="number" placeholder="Ш" value="${piece.width}" oninput="updatePiece(${piece.id}, 'width', this.value)" min="0" step="any" class="w-full px-1 py-2 bg-gray-50 border-2 border-gray-300 hover:border-gray-400 rounded-lg font-bold text-gray-800 text-center text-sm focus:outline-none focus:bg-white focus:border-[#F59E0B] transition-all shadow-sm">
+                                        <input type="number" placeholder="В" value="${piece.height}" oninput="updatePiece(${piece.id}, 'height', this.value)" min="0" step="any" class="w-full px-1 py-2 bg-gray-50 border-2 border-gray-300 hover:border-gray-400 rounded-lg font-bold text-gray-800 text-center text-sm focus:outline-none focus:bg-white focus:border-[#F59E0B] transition-all shadow-sm">
                                     </div>
                                 </div>
                             </div>
@@ -2113,7 +2127,7 @@
         window.updatePiece = function(id, field, value) {
             const p = state.pieces.find(x => x.id === id);
             if (p) {
-                p[field] = value;
+                p[field] = ['weight', 'length', 'width', 'height'].includes(field) ? sanitizePieceValue(value) : value;
                 calculate();
             }
         };
@@ -2121,7 +2135,7 @@
         window.addPiece = function() {
             const last = state.pieces[state.pieces.length - 1];
             state.pieces.push({
-                id: Date.now(),
+                id: nextPieceId(),
                 weight: last ? last.weight : '',
                 length: last ? last.length : '',
                 width: last ? last.width : '',
@@ -2134,7 +2148,7 @@
         window.duplicatePiece = function(id) {
             const p = state.pieces.find(x => x.id === id);
             if (p) {
-                state.pieces.push({ ...p, id: Date.now() });
+                state.pieces.push({ ...p, id: nextPieceId() });
                 renderPieces();
                 calculate();
             }
@@ -2166,7 +2180,7 @@
             container.classList.add('opacity-50', 'scale-95');
            
             setTimeout(() => {
-                state.pieces = [{ id: Date.now(), weight: '', length: '', width: '', height: '' }];
+                state.pieces = [{ id: nextPieceId(), weight: '', length: '', width: '', height: '' }];
                 renderPieces();
                 calculate();
                
