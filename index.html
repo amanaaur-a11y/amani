@@ -1142,11 +1142,24 @@
         ];
 
         // --- STATE MANAGEMENT ---
+        let pieceIdCounter = Date.now();
+        function nextPieceId() {
+            pieceIdCounter += 1;
+            return pieceIdCounter;
+        }
+
+        function sanitizePieceValue(value) {
+            if (value === '' || value === null || value === undefined) return '';
+            const num = Number.parseFloat(value);
+            if (!Number.isFinite(num)) return '';
+            return Math.max(0, num);
+        }
+
         let state = {
             direction: 'export',
             type: 'doc',
             country: '',
-            pieces: [{ id: Date.now(), weight: '', length: '', width: '', height: '' }],
+            pieces: [{ id: nextPieceId(), weight: '', length: '', width: '', height: '' }],
             discountPercent: '',
             extraChargesInput: '',
             selectedSurcharges: { demandSurcharge: { active: true, qty: 1 } },
@@ -2067,16 +2080,16 @@
                                     <label class="text-[10px] text-gray-400 font-bold uppercase mb-1 block">Вес ${state.weightUnit.toUpperCase()}</label>
                                     <div class="relative">
                                         <!-- ОБНОВЛЕНО: Четкая рамка (border-gray-300) и реакция на наведение (hover:border-gray-400) -->
-                                        <input type="number" placeholder="0" value="${piece.weight}" oninput="updatePiece(${piece.id}, 'weight', this.value)" class="w-full px-3 py-2 bg-gray-50 border-2 border-gray-300 hover:border-gray-400 rounded-lg font-black text-gray-800 focus:outline-none focus:bg-white focus:border-[#F59E0B] transition-all text-lg shadow-sm">
+                                        <input type="number" placeholder="0" value="${piece.weight}" oninput="updatePiece(${piece.id}, 'weight', this.value)" min="0" step="any" class="w-full px-3 py-2 bg-gray-50 border-2 border-gray-300 hover:border-gray-400 rounded-lg font-black text-gray-800 focus:outline-none focus:bg-white focus:border-[#F59E0B] transition-all text-lg shadow-sm">
                                     </div>
                                 </div>
                                 <div>
                                     <label class="text-[10px] text-gray-400 font-bold uppercase mb-1 block">Габариты ${state.dimUnit.toUpperCase()}</label>
                                     <div class="grid grid-cols-3 gap-1">
                                         <!-- ОБНОВЛЕНО: Четкие рамки для полей Д, Ш, В -->
-                                        <input type="number" placeholder="Д" value="${piece.length}" oninput="updatePiece(${piece.id}, 'length', this.value)" class="w-full px-1 py-2 bg-gray-50 border-2 border-gray-300 hover:border-gray-400 rounded-lg font-bold text-gray-800 text-center text-sm focus:outline-none focus:bg-white focus:border-[#F59E0B] transition-all shadow-sm">
-                                        <input type="number" placeholder="Ш" value="${piece.width}" oninput="updatePiece(${piece.id}, 'width', this.value)" class="w-full px-1 py-2 bg-gray-50 border-2 border-gray-300 hover:border-gray-400 rounded-lg font-bold text-gray-800 text-center text-sm focus:outline-none focus:bg-white focus:border-[#F59E0B] transition-all shadow-sm">
-                                        <input type="number" placeholder="В" value="${piece.height}" oninput="updatePiece(${piece.id}, 'height', this.value)" class="w-full px-1 py-2 bg-gray-50 border-2 border-gray-300 hover:border-gray-400 rounded-lg font-bold text-gray-800 text-center text-sm focus:outline-none focus:bg-white focus:border-[#F59E0B] transition-all shadow-sm">
+                                        <input type="number" placeholder="Д" value="${piece.length}" oninput="updatePiece(${piece.id}, 'length', this.value)" min="0" step="any" class="w-full px-1 py-2 bg-gray-50 border-2 border-gray-300 hover:border-gray-400 rounded-lg font-bold text-gray-800 text-center text-sm focus:outline-none focus:bg-white focus:border-[#F59E0B] transition-all shadow-sm">
+                                        <input type="number" placeholder="Ш" value="${piece.width}" oninput="updatePiece(${piece.id}, 'width', this.value)" min="0" step="any" class="w-full px-1 py-2 bg-gray-50 border-2 border-gray-300 hover:border-gray-400 rounded-lg font-bold text-gray-800 text-center text-sm focus:outline-none focus:bg-white focus:border-[#F59E0B] transition-all shadow-sm">
+                                        <input type="number" placeholder="В" value="${piece.height}" oninput="updatePiece(${piece.id}, 'height', this.value)" min="0" step="any" class="w-full px-1 py-2 bg-gray-50 border-2 border-gray-300 hover:border-gray-400 rounded-lg font-bold text-gray-800 text-center text-sm focus:outline-none focus:bg-white focus:border-[#F59E0B] transition-all shadow-sm">
                                     </div>
                                 </div>
                             </div>
@@ -2113,7 +2126,7 @@
         window.updatePiece = function(id, field, value) {
             const p = state.pieces.find(x => x.id === id);
             if (p) {
-                p[field] = value;
+                p[field] = ['weight', 'length', 'width', 'height'].includes(field) ? sanitizePieceValue(value) : value;
                 calculate();
             }
         };
@@ -2121,7 +2134,7 @@
         window.addPiece = function() {
             const last = state.pieces[state.pieces.length - 1];
             state.pieces.push({
-                id: Date.now(),
+                id: nextPieceId(),
                 weight: last ? last.weight : '',
                 length: last ? last.length : '',
                 width: last ? last.width : '',
@@ -2134,7 +2147,7 @@
         window.duplicatePiece = function(id) {
             const p = state.pieces.find(x => x.id === id);
             if (p) {
-                state.pieces.push({ ...p, id: Date.now() });
+                state.pieces.push({ ...p, id: nextPieceId() });
                 renderPieces();
                 calculate();
             }
@@ -2166,7 +2179,7 @@
             container.classList.add('opacity-50', 'scale-95');
            
             setTimeout(() => {
-                state.pieces = [{ id: Date.now(), weight: '', length: '', width: '', height: '' }];
+                state.pieces = [{ id: nextPieceId(), weight: '', length: '', width: '', height: '' }];
                 renderPieces();
                 calculate();
                
@@ -2775,8 +2788,41 @@
             // ОБНОВЛЕНО: Доллары (Изумрудный фон, новый текст)
             html += `<div class="flex justify-between items-center p-3.5 bg-emerald-500 rounded-xl shadow-md shadow-emerald-900/20 hover:scale-[1.02] transform transition-all duration-300 group"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white group-hover:bg-white/30 transition-colors backdrop-blur-sm shrink-0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="flex flex-col"><span class="text-[10px] font-bold text-emerald-100 uppercase tracking-wide leading-tight">Стоимость транспортировки<br>в долларах</span><span class="font-black text-xl text-white tracking-tight">$ ${res.finalUsd.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div></div></div>`;
            
-            // ОБНОВЛЕНО: Сомы (Глубокий черный фон для премиального контраста с желтой карточкой DHL)
-            html += `<div class="relative overflow-hidden p-4 bg-gray-900 rounded-xl shadow-xl shadow-black/30 text-white transform hover:scale-[1.02] transition-transform group"><div class="absolute top-0 right-0 p-4 opacity-5"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/></svg></div><div class="relative z-10 flex justify-between items-center"><div class="flex flex-col"><span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-tight mb-0.5">Стоимость транспортировки<br>в сомах</span><span class="font-black text-3xl tracking-tighter text-white">${res.finalKgs.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})} <span class="text-sm font-bold opacity-50">KGS</span></span></div><div class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-sm border border-white/5 group-hover:bg-[#FFCC00] group-hover:text-gray-900 transition-colors duration-300 text-[#FFCC00]"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/></svg></div></div></div>`;
+            // REDESIGN: Итоговая карточка KGS в фирменном оранжевом стиле
+            html += `<div class="relative overflow-hidden p-4 rounded-2xl border border-[#e6b800] bg-gradient-to-br from-[#F59E0B] via-[#FBBF24] to-[#FFCC00] shadow-2xl shadow-yellow-700/40 text-gray-900 transform hover:scale-[1.02] transition-all duration-300 group">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.35),_transparent_55%)]"></div>
+                <div class="absolute -top-10 -right-10 w-36 h-36 rounded-full bg-white/25 blur-2xl"></div>
+                <div class="relative z-10">
+                    <div class="flex items-start justify-between gap-3 mb-3">
+                        <div>
+                            <p class="text-[10px] font-bold text-gray-800/90 uppercase tracking-[0.2em]">Итоговый расчет</p>
+                            <h4 class="text-sm font-black text-gray-900 tracking-wide">К оплате в сомах</h4>
+                        </div>
+                        <div class="px-2.5 py-1 rounded-full bg-black/10 border border-black/15 text-[10px] font-bold tracking-wider text-gray-900">
+                            DHL TOTAL
+                        </div>
+                    </div>
+                    <div class="flex items-end justify-between">
+                        <div class="leading-none">
+                            <span class="font-black text-4xl tracking-tight text-gray-900">${res.finalKgs.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
+                            <span class="ml-2 text-sm font-bold text-gray-900/70">KGS</span>
+                        </div>
+                        <div class="w-12 h-12 rounded-2xl bg-black/10 flex items-center justify-center backdrop-blur border border-black/10 group-hover:bg-gray-900 group-hover:text-[#FFCC00] transition-all duration-300 text-gray-900 shadow-inner">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/></svg>
+                        </div>
+                    </div>
+                    <div class="mt-4 grid grid-cols-2 gap-2 text-[10px]">
+                        <div class="rounded-xl bg-black/10 border border-black/10 px-3 py-2">
+                            <span class="block text-gray-800/70 uppercase tracking-wider">EUR</span>
+                            <span class="font-bold text-gray-900">€ ${res.finalEur.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        </div>
+                        <div class="rounded-xl bg-black/10 border border-black/10 px-3 py-2">
+                            <span class="block text-gray-800/70 uppercase tracking-wider">USD</span>
+                            <span class="font-bold text-gray-900">$ ${res.finalUsd.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
            
             html += `</div></div>`;
 
