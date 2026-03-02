@@ -1142,8 +1142,6 @@
         ];
 
         // --- STATE MANAGEMENT ---
-
-
         let pieceIdCounter = Date.now();
         function nextPieceId() {
             pieceIdCounter += 1;
@@ -1156,6 +1154,7 @@
             if (!Number.isFinite(num)) return '';
             return Math.max(0, num);
         }
+
         let state = {
             direction: 'export',
             type: 'doc',
